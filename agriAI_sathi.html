@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AgriAI Sathi - Climate-Credit Digital Terminal v4.0</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        :root {
+            --agri-green: #10b981; /* Emerald */
+            --agri-yellow: #fbbf24; /* Amber */
+            --agri-blue: #3b82f6; /* Blue */
+            --agri-red: #ef4444; /* Red */
+            --agri-dark: #1f2937; /* Dark Gray (Body background) */
+            --terminal-bg: #111827; /* Darker Background for Panels */
+        }
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: var(--agri-dark); 
+            color: #d1d5db; /* Light text color */
+        }
+        
+        .terminal-panel {
+            background-color: var(--terminal-bg);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 10px rgba(16, 185, 129, 0.3);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        /* Sathi AI Farmer Animation Styles */
+        .sathi-head {
+            width: 70px;
+            height: 70px;
+            background-color: var(--agri-green);
+            border-radius: 50%;
+            box-shadow: 0 0 15px var(--agri-green);
+            position: relative;
+            animation: pulse-color 6s infinite ease-in-out;
+            border: 4px solid #1f2937;
+            flex-shrink: 0;
+        }
+        .sathi-hat {
+            width: 90px;
+            height: 18px;
+            background-color: #a0522d;
+            border-radius: 10px 10px 0 0;
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            z-index: 10;
+        }
+        .sathi-eye {
+            width: 8px;
+            height: 8px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 22px;
+            animation: blink 4s infinite;
+            border: 1px solid black;
+        }
+        .sathi-eye.left { left: 18px; }
+        .sathi-eye.right { right: 18px; }
+
+        @keyframes pulse-color {
+            0%, 100% { background-color: var(--agri-green); }
+            50% { background-color: #34d399; }
+        }
+        @keyframes blink {
+            0%, 20%, 40%, 60%, 80%, 100% { transform: scaleY(1); }
+            30%, 70% { transform: scaleY(0.1); }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: var(--agri-green);
+            animation: spin 1s ease infinite;
+            display: inline-block;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Insight Card Styling */
+        .insight-card {
+            transition: all 0.3s ease-in-out;
+        }
+        .insight-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.4); /* Blue glow on hover */
+        }
+        .score-low { background-color: #450a0a; border-color: var(--agri-red); color: var(--agri-red); }
+        .score-mid { background-color: #422006; border-color: var(--agri-yellow); color: var(--agri-yellow); }
+        .score-high { background-color: #064e3b; border-color: var(--agri-green); color: var(--agri-green); }
+
+        .voice-active {
+            animation: pulse-voice 1s infinite alternate;
+        }
+
+        @keyframes pulse-voice {
+            from { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            to { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+        }
+
+        /* Camera Feed Styling */
+        #video-feed {
+            width: 100%;
+            max-width: 400px;
+            border-radius: 8px;
+            margin: 0 auto;
+            display: block;
+            background-color: #0f172a;
+        }
+        
+        .markdown-body strong { color: var(--agri-yellow); font-weight: 700; }
+        .markdown-body a { color: var(--agri-blue); text-decoration: underline; }
+        
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="text-center mb-6">
+            <h1 class="text-4xl font-extrabold text-agri-green tracking-widest">AGRIAI SATHI :: TERMINAL v4.0</h1>
+            <p class="text-lg text-gray-400 font-medium">Multimodal Climate-Credit Companion</p>
+        </header>
+
+        <!-- Sathi AI Farmer Chat & Input -->
+        <div class="terminal-panel rounded-xl p-4 mb-8">
+            <!-- Sathi Persona/Response -->
+            <div class="flex items-start space-x-4 mb-4">
+                <!-- AI Farmer Animation -->
+                <div class="sathi-head flex items-center justify-center">
+                    <div class="sathi-hat"></div>
+                    <div class="sathi-eye left"></div>
+                    <div class="sathi-eye right"></div>
+                </div>
+                <!-- Response Bubble -->
+                <div class="flex-grow">
+                    <div id="sathi-response" class="p-4 bg-gray-800 text-agri-green rounded-2xl rounded-tl-none shadow-inner text-base border border-agri-green/30">
+                        <span class="font-bold">TTS Active:</span> नमस्ते, मैं Sathi हूँ! Apni **KisanLens** use karke fasal dekho, ya naya **✨ Financial Foresight ✨** button dabao for financial planning.
+                    </div>
+                </div>
+            </div>
+            
+            <!-- User Input & Action Area -->
+            <div class="flex flex-col space-y-4">
+
+                <!-- NEW: Voice Selector -->
+                <div class="mb-3">
+                    <label for="voice-select" class="text-sm font-semibold text-agri-green mb-1 block">
+                        Sathi AI Voice (Browser TTS Selector)
+                    </label>
+                    <select id="voice-select" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-agri-blue focus:border-agri-blue transition">
+                        <option value="">Loading voices...</option>
+                    </select>
+                </div>
+                
+                <!-- KisanLens Image Upload/Camera -->
+                <div class="bg-gray-800 p-3 rounded-lg border border-gray-700">
+                    <label class="flex items-center text-sm font-semibold text-agri-yellow mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-scan-line mr-2"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" x2="17" y1="12" y2="12"/></svg>
+                        KisanLens: Multimodal Input
+                    </label>
+                    
+                    <!-- Toggle Buttons -->
+                    <div class="flex space-x-2 mb-3">
+                        <button id="upload-mode-btn" onclick="toggleKisanLensMode('upload')" class="flex-1 p-2 rounded-lg bg-agri-blue text-white font-medium transition duration-150">
+                            Upload Photo
+                        </button>
+                        <button id="camera-mode-btn" onclick="toggleKisanLensMode('camera')" class="flex-1 p-2 rounded-lg bg-gray-600 text-white font-medium transition duration-150">
+                            Use Camera
+                        </button>
+                    </div>
+
+                    <!-- Input Containers -->
+                    <div id="upload-container" class="p-2 border border-gray-600 rounded-lg">
+                        <input type="file" id="image-upload" accept="image/jpeg, image/png" onchange="handleFileUpload(this)" class="w-full text-sm text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-agri-green/20 file:text-agri-green hover:file:bg-agri-green/30 cursor-pointer">
+                    </div>
+
+                    <div id="camera-container" class="hidden flex flex-col items-center p-2 space-y-3">
+                        <video id="video-feed" autoplay playsinline class="max-h-64"></video>
+                        <canvas id="hidden-canvas" style="display:none;"></canvas>
+                        <button id="capture-btn" onclick="captureImage()" class="bg-agri-red text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-red-600 transition duration-150 active:scale-95 flex items-center justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-camera mr-2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                            Capture Photo
+                        </button>
+                    </div>
+                    
+                    <!-- Image Preview Area (Shared) -->
+                    <div id="image-preview-container" class="relative mt-2 p-2 hidden">
+                        <img id="image-preview" class="max-h-32 object-contain rounded border border-agri-green/50 mx-auto" alt="Crop Preview">
+                        <button onclick="clearImage()" class="absolute top-0 right-0 p-1 bg-red-600 rounded-full text-white text-xs hover:bg-red-700 transition">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                        </button>
+                        <p class="text-center text-xs text-gray-400 mt-1">Image ready for analysis.</p>
+                    </div>
+                </div>
+
+                <!-- Text Input, Voice, and Send Buttons -->
+                <div class="flex space-x-2">
+                    <input type="text" id="user-input" placeholder="E.g., 'Is patte (leaf) mein kya problem hai? (or) Mujhe cotton mein kab paani dena chahiye?'" class="flex-grow p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:ring-agri-blue focus:border-agri-blue transition">
+                    
+                    <!-- Voice Input Button -->
+                    <button onclick="startVoiceInput()" id="voice-btn" class="bg-blue-600 text-white font-semibold py-3 px-3 rounded-lg shadow-lg hover:bg-blue-700 transition duration-150 active:scale-95 flex items-center justify-center border border-blue-400" aria-label="Start Voice Input">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mic"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    </button>
+
+                    <!-- Send Button -->
+                    <button onclick="sendQuery()" id="send-btn" class="bg-agri-green text-gray-900 font-bold py-3 px-6 rounded-lg shadow-lg hover:bg-green-500 transition duration-150 active:scale-95 flex items-center justify-center border border-green-400">
+                        <span id="button-text">Submit Query</span>
+                        <span id="button-spinner" class="spinner ml-2 hidden"></span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- New Quick Action Button (Policy Simplifier) -->
+            <div class="mt-4 flex justify-center">
+                <button onclick="simplifyPolicy()" class="bg-purple-600 text-white font-bold py-2 px-6 rounded-full shadow-lg hover:bg-purple-700 transition duration-150 active:scale-95 flex items-center justify-center text-sm">
+                    ✨ Simplify PMFBY Policy for Me ✨
+                </button>
+            </div>
+
+
+            <!-- Hackathon Requirement: Displaying the simulated User ID -->
+            <p class="text-xs text-gray-500 mt-4 text-right">
+                Simulated Farmer ID: <span id="farmer-id" class="font-mono text-gray-400"></span> (Agri Stack Link)
+            </p>
+        </div>
+
+        <!-- Dashboard Insights Section -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+            
+            <!-- 1. Credit Readiness Score (Primary Metric for Credit) -->
+            <div class="insight-card terminal-panel rounded-xl p-5 text-center border-b-4 border-agri-blue">
+                <div class="text-5xl font-extrabold mb-2" id="credit-score">--</div>
+                <h3 class="text-sm font-semibold text-agri-blue mb-1 uppercase tracking-widest">CREDIT-READINESS</h3>
+                <p class="text-xs text-gray-400">(AI-Advised Compliance)</p>
+            </div>
+
+            <!-- 2. MRV: Water Use Efficiency (Climate Resilience Metric) -->
+            <div class="insight-card terminal-panel rounded-xl p-5 text-center border-b-4 border-agri-green">
+                <div id="mrv-water" class="text-5xl mb-2 text-agri-green">💧</div>
+                <h3 class="text-sm font-semibold text-agri-green mb-1 uppercase tracking-widest">WATER EFFICIENCY</h3>
+                <p class="text-xs text-gray-400" id="mrv-water-text">Awaiting data...</p>
+            </div>
+
+            <!-- 3. MRV: Input Cost Optimization (Financial Efficiency Metric) -->
+            <div class="insight-card terminal-panel rounded-xl p-5 text-center border-b-4 border-agri-yellow">
+                <div id="mrv-cost" class="text-5xl mb-2 text-agri-yellow">📉</div>
+                <h3 class="text-sm font-semibold text-agri-yellow mb-1 uppercase tracking-widest">COST OPTIMIZED</h3>
+                <p class="text-xs text-gray-400" id="mrv-cost-text">Awaiting data...</p>
+            </div>
+
+            <!-- 4. Risk Alert/Weather (Immediate Risk Metric) -->
+            <div class="insight-card terminal-panel rounded-xl p-5 text-center border-b-4 border-agri-red">
+                <div id="risk-icon" class="text-5xl mb-2 text-agri-red">⚠️</div>
+                <h3 class="text-sm font-semibold text-agri-red mb-1 uppercase tracking-widest">FARM RISK LEVEL</h3>
+                <p class="text-xs text-gray-400" id="risk-text">No alerts.</p>
+            </div>
+        </div>
+        
+        <!-- Financial Services: Loans, Insurance & Financial Foresight -->
+        <div class="terminal-panel rounded-xl p-5 mb-8">
+            <h3 class="text-xl font-bold text-gray-200 mb-4 border-b border-gray-700 pb-2 flex items-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-indian-rupee-sign mr-3 text-agri-yellow"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m10 21 4-7"/><path d="M6 13h12a4 4 0 0 0 0-8H6v16"/></svg>
+                Financial Services Terminal
+            </h3>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                <!-- Loan Portal Button -->
+                <button onclick="openLoanPortal()" class="insight-card terminal-panel rounded-xl p-4 text-left border-l-4 border-agri-blue hover:bg-gray-800 transition duration-200 shadow-lg">
+                    <div class="flex items-center mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-banknote text-agri-blue mr-2"><rect width="20" height="12" x="2" y="6" rx="3"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/></svg>
+                        <span class="text-lg font-extrabold text-agri-blue">FARMER LOANS</span>
+                    </div>
+                    <p class="text-xs text-gray-400">View KCC and financing eligibility based on Credit Score.</p>
+                </button>
+
+                <!-- Insurance Portal Button -->
+                <button onclick="openInsurancePortal()" class="insight-card terminal-panel rounded-xl p-4 text-left border-l-4 border-agri-green hover:bg-gray-800 transition duration-200 shadow-lg">
+                    <div class="flex items-center mb-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-umbrella text-agri-green mr-2"><path d="M22 12a10.02 10.02 0 0 0-20 0Z"/><path d="M12 12v8"/><path d="M12 20h2"/><path d="M12 20H8"/></svg>
+                        <span class="text-lg font-extrabold text-agri-green">CROP INSURANCE</span>
+                    </div>
+                    <p class="text-xs text-gray-400">Check premium rates and file instant claims with KisanLens.</p>
+                </button>
+
+                <!-- Financial Foresight Button -->
+                <button onclick="generateFinancialForesight()" class="insight-card terminal-panel rounded-xl p-4 text-left border-l-4 border-agri-yellow hover:bg-gray-800 transition duration-200 shadow-lg">
+                    <div class="flex items-center mb-1">
+                           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up text-agri-yellow mr-2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+                        <span class="text-lg font-extrabold text-agri-yellow">✨ Financial Foresight ✨</span>
+                    </div>
+                    <p class="text-xs text-gray-400">AI projection of yield, market price, and financial risk (Gemini API).</p>
+                </button>
+                
+            </div>
+        </div>
+        <!-- END NEW SECTION -->
+
+        <!-- D3 Chart for Credit Score History -->
+        <div class="terminal-panel rounded-xl p-5">
+            <h3 class="text-lg font-bold text-gray-200 mb-3 border-b border-gray-700 pb-2">Credit Score Progress (Verifiable MRV History)</h3>
+            <div id="d3-chart" class="w-full h-48">
+                <!-- D3.js chart will be rendered here -->
+            </div>
+        </div>
+    </div>
+    
+    <!-- Custom Modal for Financial Services (HIDDEN OVERLAY) -->
+    <div id="financial-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-75 transition-opacity duration-300">
+        <div class="terminal-panel w-11/12 md:w-2/3 lg:w-1/2 xl:w-1/3 rounded-xl p-6 relative">
+            <h2 id="modal-title" class="text-2xl font-bold mb-4 border-b pb-2 text-agri-yellow"></h2>
+            <div id="modal-content" class="text-gray-300 space-y-3"></div>
+            <button onclick="hideModal()" class="mt-6 w-full py-3 bg-agri-green text-gray-900 font-bold rounded-lg hover:bg-green-500 transition">
+                Close / Return to Sathi
+            </button>
+            <button onclick="hideModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white transition">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+    </div>
+    
+    <script>
+        // --- API CONFIGURATION START ---
+        const apiKey = "AIzaSyDSKEXZ0pZ6Dn-RtAsJIy3UhLnxj6cvnEI"; 
+        const modelName = "gemini-1.5-flash";
+        
+        // Construct the API URL. If apiKey is empty (standard for Canvas), omit the ?key parameter.
+        let apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent`;
+        if (apiKey) {
+            apiUrl += `?key=${apiKey}`;
+        }
+        // --- API CONFIGURATION END ---
+        
+        // --- DOM Elements ---
+        const userQueryInput = document.getElementById('user-input');
+        const sathiResponseDiv = document.getElementById('sathi-response');
+        const sendBtn = document.getElementById('send-btn');
+        const voiceBtn = document.getElementById('voice-btn');
+        const buttonText = document.getElementById('button-text');
+        const buttonSpinner = document.getElementById('button-spinner');
+        const farmerIdDiv = document.getElementById('farmer-id');
+        const voiceSelect = document.getElementById('voice-select'); 
+        
+        // KisanLens Elements
+        const uploadModeBtn = document.getElementById('upload-mode-btn');
+        const cameraModeBtn = document.getElementById('camera-mode-btn');
+        const uploadContainer = document.getElementById('upload-container');
+        const cameraContainer = document.getElementById('camera-container');
+        const imageUploadInput = document.getElementById('image-upload');
+        const imagePreview = document.getElementById('image-preview');
+        const imagePreviewContainer = document.getElementById('image-preview-container');
+        const videoFeed = document.getElementById('video-feed');
+        const hiddenCanvas = document.getElementById('hidden-canvas');
+        
+        // Dashboard Elements
+        const creditScoreDiv = document.getElementById('credit-score');
+        
+        // --- State Management ---
+        let scoreHistory = [
+            { id: 1, score: 65, label: "Initial" },
+            { id: 2, score: 68, label: "Soil Test" },
+        ]; 
+        let interactionCount = 3;
+        const userId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'user-' + Math.random().toString(36).substr(2, 9); 
+        farmerIdDiv.textContent = userId;
+
+        let base64Image = null; // Stores Base64 image data to be sent
+        let cameraStream = null; // Stores the active camera stream track
+        let selectedVoice = null; 
+
+        // --- Utility for API Calls with Exponential Backoff ---
+        async function retryFetchWithExponentialBackoff(url, options, maxRetries = 5) {
+            for (let i = 0; i < maxRetries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (response.ok) return response;
+                    if (response.status === 429 || response.status >= 500) {
+                        const delay = Math.pow(2, i) * 1000 + Math.random() * 1000;
+                        console.warn(`API call failed with status ${response.status}. Retrying in ${delay.toFixed(0)}ms (Attempt ${i + 1}/${maxRetries}).`);
+                        await new Promise(resolve => setTimeout(resolve, delay));
+                    } else {
+                        // For other client errors (4xx) don't retry, just throw
+                        throw new Error(`API returned client error ${response.status}: ${response.statusText}`);
+                    }
+                } catch (error) {
+                    if (i === maxRetries - 1) {
+                        throw new Error(`API call failed after ${maxRetries} attempts: ${error.message}`);
+                    }
+                }
+            }
+        }
+        
+        // --- Generic Utility for Handling UI State ---
+        function setLoadingState(isLoading, message = "Processing query...") {
+            sendBtn.disabled = isLoading;
+            userQueryInput.disabled = isLoading;
+            voiceBtn.disabled = isLoading;
+            
+            if (isLoading) {
+                buttonText.textContent = message;
+                buttonSpinner.classList.remove('hidden');
+                sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-blue">Sathi:</span> ${message} <span class="spinner ml-2"></span>`;
+            } else {
+                buttonText.textContent = 'Submit Query';
+                buttonSpinner.classList.add('hidden');
+            }
+        }
+        
+        // --- Function to Render Model Response (Text and Sources) ---
+        function renderResponse(text, sources) {
+            // Simple conversion of markdown-like bold/italics
+            const formattedText = text
+                .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                .replace(/\n/g, '<br>'); // Simple line break handling
+            
+            let htmlContent = `<span class="font-bold text-agri-green">Sathi AI Response:</span><br><div class="markdown-body">${formattedText}</div>`;
+
+            if (sources && sources.length > 0) {
+                htmlContent += '<p class="text-xs mt-4 text-gray-500 font-semibold">Grounded Sources (via Google Search):</p>';
+                sources.forEach((source, index) => {
+                    htmlContent += `<p class="text-xs text-blue-400 mt-1"><span class="text-agri-green">[${index + 1}]</span> <a href="${source.uri}" target="_blank" class="hover:underline">${source.title || source.uri}</a></p>`;
+                });
+            }
+
+            sathiResponseDiv.innerHTML = htmlContent;
+            speakText(formattedText);
+        }
+
+        // --- TTS Implementation ---
+        let synthesis = null;
+        let isSpeaking = false;
+        
+        function populateVoiceList() {
+            const voices = synthesis.getVoices();
+            voiceSelect.innerHTML = '';
+            
+            let foundDefaultVoice = null;
+            let foundFallbackVoice = null;
+
+            voices.forEach(voice => {
+                const option = document.createElement('option');
+                option.textContent = `${voice.name} (${voice.lang})`;
+                option.setAttribute('data-name', voice.name);
+                option.value = voice.name;
+                
+                // Prioritize Indian English, then general English, then system default
+                if (voice.lang.includes('en-IN')) {
+                    foundDefaultVoice = voice.name;
+                } else if (voice.lang.includes('en-US') || voice.lang.includes('en-GB')) {
+                    foundFallbackVoice = voice.name;
+                }
+                
+                voiceSelect.appendChild(option);
+            });
+
+            // Set default selection
+            const defaultVoiceName = foundDefaultVoice || foundFallbackVoice || (voices.length > 0 ? voices[0].name : '');
+            if (defaultVoiceName) {
+                voiceSelect.value = defaultVoiceName;
+            }
+            
+            updateSelectedVoice();
+            voiceSelect.addEventListener('change', updateSelectedVoice);
+        }
+
+        function updateSelectedVoice() {
+            const voiceName = voiceSelect.value;
+            const voices = synthesis.getVoices();
+            selectedVoice = voices.find(voice => voice.name === voiceName);
+            console.log("TTS Voice set to:", selectedVoice ? selectedVoice.name : "Default");
+        }
+
+        function initializeTTS() {
+            synthesis = window.speechSynthesis;
+            if (!synthesis) {
+                console.warn("Text-to-Speech not supported in this browser.");
+                return;
+            }
+            
+            synthesis.onvoiceschanged = populateVoiceList;
+
+            if (synthesis.getVoices().length > 0) {
+                populateVoiceList();
+            }
+        }
+
+        function speakText(text) {
+            if (!synthesis) return;
+            if (isSpeaking) { synthesis.cancel(); }
+
+            // Clean up text for TTS (remove HTML/Markdown formatting that might break TTS)
+            const cleanText = text
+                .replace(/\[\d+\]/g, '') // Remove [1], [2] sources
+                .replace(/<br>/g, '. ')
+                .replace(/<[^>]*>?/gm, ''); // Remove HTML tags
+
+            if (cleanText.trim().length === 0) return;
+
+            const utterance = new SpeechSynthesisUtterance(cleanText);
+            
+            if (selectedVoice) {
+                utterance.voice = selectedVoice;
+            } else {
+                utterance.rate = 0.9; 
+                utterance.pitch = 1.0; 
+            }
+            
+            utterance.onstart = () => { isSpeaking = true; };
+            utterance.onend = () => { isSpeaking = false; };
+            utterance.onerror = (e) => { 
+                console.error('TTS Error:', e.error);
+                isSpeaking = false;
+            };
+
+            synthesis.speak(utterance);
+        }
+        
+        // --- KisanLens Mode & Camera Handling ---
+        function toggleKisanLensMode(mode) {
+            clearImage(); 
+            
+            if (mode === 'upload') {
+                uploadContainer.classList.remove('hidden');
+                cameraContainer.classList.add('hidden');
+                uploadModeBtn.classList.replace('bg-gray-600', 'bg-agri-blue');
+                cameraModeBtn.classList.replace('bg-agri-blue', 'bg-gray-600');
+                if (cameraStream) stopCamera();
+            } else if (mode === 'camera') {
+                uploadContainer.classList.add('hidden');
+                cameraContainer.classList.remove('hidden');
+                cameraModeBtn.classList.replace('bg-gray-600', 'bg-agri-blue');
+                uploadModeBtn.classList.replace('bg-agri-blue', 'bg-gray-600');
+                startCamera();
+            }
+        }
+
+        async function startCamera() {
+            if (cameraStream) return; 
+            try {
+                const constraints = { video: { facingMode: 'environment' } };
+                cameraStream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoFeed.srcObject = cameraStream;
+                videoFeed.play();
+                sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-blue">Sathi:</span> Camera feed active. Point your camera at the crop problem and click 'Capture Photo'.`;
+            } catch (err) {
+                console.error("Error accessing camera: ", err);
+                sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-red">Sathi Error:</span> Cannot access camera. Please ensure permissions are granted or switch to 'Upload Photo' mode.`;
+                cameraStream = null;
+                cameraContainer.classList.add('hidden');
+                uploadContainer.classList.remove('hidden');
+                toggleKisanLensMode('upload');
+            }
+        }
+
+        function stopCamera() {
+            if (cameraStream) {
+                cameraStream.getTracks().forEach(track => track.stop());
+                cameraStream = null;
+                videoFeed.srcObject = null;
+            }
+        }
+
+        function captureImage() {
+            if (!cameraStream) return;
+
+            stopCamera();
+            
+            hiddenCanvas.width = videoFeed.videoWidth;
+            hiddenCanvas.height = videoFeed.videoHeight;
+            
+            const ctx = hiddenCanvas.getContext('2d');
+            
+            ctx.drawImage(videoFeed, 0, 0, hiddenCanvas.width, hiddenCanvas.height);
+            
+            const dataURL = hiddenCanvas.toDataURL('image/jpeg', 0.8); 
+            base64Image = dataURL.split(',')[1];
+            
+            imagePreview.src = dataURL;
+            imagePreviewContainer.classList.remove('hidden');
+            cameraContainer.classList.add('hidden');
+            
+            sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-green">Sathi:</span> Photo captured! Now describe the problem in the text box and submit your query.`;
+        }
+
+        function handleFileUpload(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const dataURL = e.target.result;
+                    imagePreview.src = dataURL;
+                    imagePreviewContainer.classList.remove('hidden');
+                    
+                    base64Image = dataURL.split(',')[1];
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function clearImage() {
+            base64Image = null;
+            imageUploadInput.value = ''; 
+            imagePreview.src = '';
+            imagePreviewContainer.classList.add('hidden');
+            
+            stopCamera();
+            if (cameraContainer.classList.contains('hidden') === false) {
+                 toggleKisanLensMode('upload');
+            }
+        }
+        
+        // --- Modal Control Functions ---
+        function showModal(title, content) {
+            document.getElementById('modal-title').textContent = title;
+            document.getElementById('modal-content').innerHTML = content;
+            document.getElementById('financial-modal').classList.remove('hidden');
+        }
+
+        function hideModal() {
+            document.getElementById('financial-modal').classList.add('hidden');
+        }
+
+        function openLoanPortal() {
+            const currentScore = creditScoreDiv.textContent;
+            const loanAmount = parseInt(currentScore) >= 75 ? '₹ 10,00,000' : '₹ 5,00,000';
+            const status = parseInt(currentScore) >= 65 ? 'Pre-Approved' : 'Pending Review';
+
+            const title = "Digital Loan Application Portal";
+            const content = `
+                <p><strong>Status:</strong> <span class="text-agri-yellow">${status}</span> based on your Credit-Readiness Score (${currentScore}).</p>
+                <div class="p-3 bg-gray-800 rounded">
+                    <p class="font-bold text-agri-blue">Maximum Eligible Loan Amount:</p>
+                    <p class="text-2xl font-extrabold text-agri-green">${loanAmount}</p>
+                    <p class="text-sm">For crop cycle investment (e.g., seeds, fertilizer). Higher scores get better terms.</p>
+                </div>
+                <p>To proceed, please prepare your Aadhaar Card and Land Records for e-KYC. Our digital process takes less than 5 minutes.</p>
+                <p class="text-xs text-gray-400">View your comprehensive Digital Ledger (DL) and MRV data on the platform.</p>
+            `;
+            showModal(title, content);
+        }
+
+        function openInsurancePortal() {
+            const currentScore = creditScoreDiv.textContent;
+            const claimStatus = parseInt(currentScore) >= 70 ? 'Fast-Track Eligibility' : 'Standard Claim Process';
+
+            const title = "Pradhan Mantri Fasal Bima Yojana (PMFBY)";
+            const content = `
+                <p><strong>Current Policy Status:</strong> Covered for Kharif season (Cotton/Paddy).</p>
+                <div class="p-3 bg-gray-800 rounded">
+                    <p class="font-bold text-agri-green">Claim Filing Status:</p>
+                    <p class="text-2xl font-extrabold text-agri-yellow">${claimStatus}</p>
+                    <p class="text-sm">Use KisanLens to submit photographic evidence of crop damage instantly to accelerate claims.</p>
+                </div>
+                <p>Premium Paid: ₹ 8,500 (Subsidy Adjusted). Coverage: ₹ 4,00,000.</p>
+                <p class="text-xs text-gray-400">Claims are processed based on state-level yield data and your personal geo-tagged farm data.</p>
+            `;
+            showModal(title, content);
+        }
+
+        // --- Core Gemini API Implementations ---
+
+        async function generateFinancialForesight() {
+            setLoadingState(true, "Calculating Financial Foresight (Using Gemini API)...");
+            showModal("✨ Financial Foresight Projection ✨", `
+                <div id="foresight-loading" class="text-center py-8">
+                    <span class="spinner mr-2"></span>
+                    <p class="mt-2 text-agri-yellow font-semibold">Analyzing global commodity markets and farm-specific MRV data...</p>
+                    <p class="text-sm text-gray-400 mt-1">This uses Google Search Grounding to provide real-time market insights.</p>
+                </div>
+                <div id="foresight-result" class="hidden"></div>
+            `);
+            
+            const foresightLoadingDiv = document.getElementById('foresight-loading');
+            const foresightResultDiv = document.getElementById('foresight-result');
+            
+            // Using placeholder MRV data based on initial score for prompt construction
+            const waterEff = parseInt(creditScoreDiv.textContent) + 10;
+            const costOpt = parseInt(creditScoreDiv.textContent) + 5;
+
+            try {
+                const systemPrompt = `You are a world-class Agricultural Economist and Financial Analyst. Your goal is to provide a comprehensive, actionable financial foresight report for an Indian farmer. Analyze potential market prices, yield projections, and climate risks. Use bold formatting for key metrics and recommendations. Respond concisely in four well-structured paragraphs: 
+                1. Yield Projection and Market Price Estimate (Grounded).
+                2. Financial Risk Assessment (Based on Credit Score ${creditScoreDiv.textContent}).
+                3. Climate Resilience Recommendations.
+                4. Final Actionable Summary (Use a positive, supportive tone).`;
+                
+                const userQuery = `Generate a financial foresight report for my farm (Farmer ID: ${userId}). The current crop is Cotton (Kharif season). My verifiable water use efficiency score is ${waterEff}% and input cost optimization score is ${costOpt}%. Provide market prices for cotton (kapas) in major Indian markets.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    tools: [{ "google_search": {} }], // Enable grounding
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                };
+
+                const response = await retryFetchWithExponentialBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                let text = "Error: Could not retrieve analysis.";
+                let sources = [];
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    text = candidate.content.parts[0].text;
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
+                    }
+                }
+
+                // Format the text and sources for the modal
+                let formattedContent = `<div class="prose prose-sm max-w-none text-gray-300">${text.replace(/\n/g, '<br><br>')}</div>`;
+
+                if (sources.length > 0) {
+                    formattedContent += '<p class="text-xs mt-4 text-agri-green font-semibold border-t border-gray-700 pt-2">Sources for Market Data:</p>';
+                    sources.forEach((source, index) => {
+                        formattedContent += `<p class="text-xs text-blue-400 mt-1"><span class="text-agri-yellow">[${index + 1}]</span> <a href="${source.uri}" target="_blank" class="hover:underline">${source.title || source.uri}</a></p>`;
+                    });
+                }
+                
+                foresightLoadingDiv.classList.add('hidden');
+                foresightResultDiv.innerHTML = formattedContent;
+                foresightResultDiv.classList.remove('hidden');
+                
+                // Also update main chat response with a summary
+                const summary = text.split('\n')[0].trim().replace(/\*\*/g, '');
+                renderResponse(`Financial foresight generated! Summary: ${summary}`, sources);
+
+
+            } catch (error) {
+                console.error("Financial Foresight API Error:", error);
+                foresightLoadingDiv.classList.add('hidden');
+                foresightResultDiv.innerHTML = `<p class="text-red-500 font-bold">Error generating foresight: ${error.message}. Please try again.</p>`;
+                foresightResultDiv.classList.remove('hidden');
+                renderResponse("Sorry, there was an error processing the financial foresight request. Please check the console for details.", []);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        async function simplifyPolicy() {
+            setLoadingState(true, "Simplifying PMFBY Policy (Using Grounding)...");
+            
+            const policyText = "Pradhan Mantri Fasal Bima Yojana (PMFBY) is a government-sponsored crop insurance scheme that integrates multiple stakeholders on a single platform. It aims to provide financial support to farmers suffering crop loss/damage arising out of unforeseen events. The sum insured will be equal to the Scale of Finance for that crop as fixed by the District Level Technical Committee. Claim payment is assessed based on the difference between the guaranteed yield and the actual yield in a notified unit area. Premiums are subsidized, with farmers paying 2% for Kharif, 1.5% for Rabi, and 5% for commercial/horticultural crops.";
+
+            try {
+                const systemPrompt = `You are a compassionate Agri-Advisor helping an Indian farmer understand the complex PMFBY policy. Take the provided policy text and simplify it into a concise, easily digestible summary using simple Hindi/English (Hinglish) and focusing on the three most important facts for the farmer: **Premium Cost**, **Coverage**, and **Claim Process**. Use friendly language.`;
+                
+                const userQuery = `Simplify this crop insurance policy text: "${policyText}". Use Google Search to verify the latest key facts.`;
+
+                const payload = {
+                    contents: [{ parts: [{ text: userQuery }] }],
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                    tools: [{ "google_search": {} }], 
+                };
+
+                const response = await retryFetchWithExponentialBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const text = result.candidates?.[0]?.content?.parts?.[0]?.text || "Error: Policy simplification failed.";
+
+                const content = `<h4 class="text-lg font-bold text-agri-green mb-3">Sathi's Policy Simplification:</h4>
+                                 <div class="prose prose-sm max-w-none text-gray-300">${text.replace(/\n/g, '<br><br>')}</div>
+                                 <p class="text-xs text-gray-500 mt-4 border-t border-gray-700 pt-2">This summary is based on the official PMFBY guidelines. Always confirm specifics with your local Krishi Kendra.</p>`;
+                                 
+                showModal("PMFBY Policy Simplified for You", content);
+                renderResponse("The policy has been simplified for you and is available in the modal. Just click close to return.", []);
+
+            } catch (error) {
+                console.error("Simplify Policy API Error:", error);
+                showModal("Policy Simplification Error", `<p class="text-red-500 font-bold">Error: Could not simplify the policy due to an API error. ${error.message}</p>`);
+                renderResponse("Sorry, there was an error simplifying the policy. Please check the console.", []);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+        // --- Main Query Sender (Handles Text + Image) ---
+        async function sendQuery() {
+            const userQuery = userQueryInput.value.trim();
+            if (!userQuery && !base64Image) {
+                speakText("Please enter a question or upload a photo first.");
+                sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-yellow">Sathi:</span> Please enter a question or upload/capture a crop photo first.`;
+                return;
+            }
+
+            setLoadingState(true);
+            
+            const parts = [{ text: userQuery }];
+
+            if (base64Image) {
+                // Add the image data to the parts array
+                parts.push({
+                    inlineData: {
+                        mimeType: "image/jpeg",
+                        data: base64Image
+                    }
+                });
+            }
+
+            try {
+                const systemPrompt = `You are AgriAI Sathi, an expert agricultural advisor and a digital companion for Indian farmers. Your response should be helpful, empathetic, and actionable. Use common farming terms in Hinglish (Hindi/English mix) where appropriate. Use Google Search grounding for up-to-date information on weather, pests, or market prices. If you see a crop photo, analyze the potential issue (pest, nutrient deficiency, or disease) and provide a concise treatment plan.`;
+                
+                const payload = {
+                    contents: [{ role: "user", parts: parts }],
+                    tools: [{ "google_search": {} }], // Enable grounding
+                    systemInstruction: { parts: [{ text: systemPrompt }] },
+                };
+
+                const response = await retryFetchWithExponentialBackoff(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                const candidate = result.candidates?.[0];
+                let text = "Error: Could not retrieve a meaningful response.";
+                let sources = [];
+                let newScore = scoreHistory[scoreHistory.length - 1].score;
+
+                if (candidate && candidate.content?.parts?.[0]?.text) {
+                    text = candidate.content.parts[0].text;
+                    const groundingMetadata = candidate.groundingMetadata;
+                    if (groundingMetadata && groundingMetadata.groundingAttributions) {
+                        sources = groundingMetadata.groundingAttributions
+                            .map(attribution => ({
+                                uri: attribution.web?.uri,
+                                title: attribution.web?.title,
+                            }))
+                            .filter(source => source.uri && source.title);
+                    }
+                    
+                    // Simulate Credit Score Update based on the nature of the query (MRV compliance)
+                    const positiveKeywords = ['irrigation', 'fertilizer', 'pesticide', 'organic', 'climate', 'soil test', 'problem'];
+                    if (positiveKeywords.some(keyword => userQuery.toLowerCase().includes(keyword)) || base64Image) {
+                         // Proactive check or MRV submission increases score (Simulated)
+                         newScore = Math.min(95, newScore + (base64Image ? 3 : 1)); 
+                         let scoreMsg = base64Image ? `KisanLens (MRV) submission has improved your score!` : `Proactive query has slightly improved your score!`;
+                         updateScoreDisplay(newScore, scoreMsg);
+                    }
+                    
+                    // Add new score to history if it changed
+                    if (newScore !== scoreHistory[scoreHistory.length - 1].score) {
+                        scoreHistory.push({ id: interactionCount++, score: newScore, label: `Interaction ${interactionCount - 1}` });
+                        drawD3Chart();
+                    }
+                }
+                
+                // Final UI update
+                renderResponse(text, sources);
+                clearImage(); // Clear image after successful processing
+                userQueryInput.value = ''; // Clear text input
+                
+            } catch (error) {
+                console.error("Main Chat API Error:", error);
+                renderResponse(`Sorry, Sathi ran into an error: ${error.message}. Please check your connection or try a simpler query.`, []);
+            } finally {
+                setLoadingState(false);
+            }
+        }
+
+
+        // --- D3 Chart Logic (Credit Score History) ---
+        function drawD3Chart() {
+            const data = scoreHistory;
+            const container = d3.select("#d3-chart");
+            container.selectAll("*").remove(); // Clear previous chart
+
+            const margin = { top: 10, right: 30, bottom: 30, left: 40 },
+                width = container.node().clientWidth - margin.left - margin.right,
+                height = container.node().clientHeight - margin.top - margin.bottom;
+
+            const svg = container.append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+              .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            // X-axis (Sequential interactions)
+            const x = d3.scaleLinear()
+                .domain([1, d3.max(data, d => d.id)])
+                .range([0, width]);
+            
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).tickFormat(d => d === d3.max(data, d => d.id) ? `Latest Score` : `Int ${d}`).ticks(data.length > 5 ? 5 : data.length - 1))
+                .selectAll("text")
+                .style("fill", "#9ca3af");
+
+            // Y-axis (Score)
+            const y = d3.scaleLinear()
+                .domain([50, 100])
+                .range([height, 0]);
+                
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(5))
+                .selectAll("text")
+                .style("fill", "#9ca3af");
+
+            // Line generator
+            const line = d3.line()
+                .x(d => x(d.id))
+                .y(d => y(d.score));
+
+            // Draw the path
+            svg.append("path")
+                .datum(data)
+                .attr("fill", "none")
+                .attr("stroke", "var(--agri-blue)")
+                .attr("stroke-width", 3)
+                .attr("d", line);
+                
+            // Draw points
+            svg.selectAll("dot")
+                .data(data)
+              .enter().append("circle")
+                .attr("r", 5)
+                .attr("cx", d => x(d.id))
+                .attr("cy", d => y(d.score))
+                .attr("fill", "var(--agri-green)")
+                .attr("stroke", "var(--terminal-bg)")
+                .attr("stroke-width", 2)
+              .on("mouseover", function(event, d) {
+                    d3.select(this).attr("r", 8);
+                    const tooltip = d3.select("body").append("div")
+                        .attr("class", "score-tooltip absolute bg-gray-900 p-2 rounded shadow-lg text-agri-yellow text-sm pointer-events-none")
+                        .style("left", (event.pageX + 10) + "px")
+                        .style("top", (event.pageY - 28) + "px")
+                        .text(`${d.label}: ${d.score}`);
+              })
+              .on("mouseout", function(d) {
+                    d3.select(this).attr("r", 5);
+                    d3.selectAll(".score-tooltip").remove();
+              });
+        }
+        
+        // --- Score Update Logic ---
+        function updateScoreDisplay(newScore) {
+            creditScoreDiv.textContent = newScore;
+            
+            let colorClass;
+            
+            // Check current credit score for classification
+            if (newScore >= 85) {
+                colorClass = "score-high";
+                document.getElementById('mrv-water-text').textContent = "Optimal (85%+)";
+                document.getElementById('mrv-cost-text').textContent = "High Savings";
+                document.getElementById('risk-icon').textContent = "✅";
+                document.getElementById('risk-text').textContent = "Low Risk (Green Zone)";
+            } else if (newScore >= 65) {
+                colorClass = "score-mid";
+                document.getElementById('mrv-water-text').textContent = "Efficient (65%+)";
+                document.getElementById('mrv-cost-text').textContent = "Moderate Savings";
+                document.getElementById('risk-icon').textContent = "⚠️";
+                document.getElementById('risk-text').textContent = "Moderate Risk (Check Weather)";
+            } else {
+                colorClass = "score-low";
+                document.getElementById('mrv-water-text').textContent = "Needs Improvement";
+                document.getElementById('mrv-cost-text').textContent = "High Costs";
+                document.getElementById('risk-icon').textContent = "🚨";
+                document.getElementById('risk-text').textContent = "High Alert (Red Zone)";
+            }
+            
+            // Apply color classes to the main credit score panel
+            creditScoreDiv.parentElement.classList.remove('score-low', 'score-mid', 'score-high');
+            creditScoreDiv.parentElement.classList.add(colorClass);
+
+            document.getElementById('mrv-water').textContent = "💧 " + (Math.min(95, newScore + 10)) + "%";
+            document.getElementById('mrv-cost').textContent = "📉 " + (Math.min(95, newScore + 5)) + "%";
+
+        }
+
+        // --- Voice Input (Speech Recognition) ---
+        let recognition = null;
+
+        function initializeSpeechRecognition() {
+            if (window.SpeechRecognition || window.webkitSpeechRecognition) {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                recognition = new SpeechRecognition();
+                recognition.continuous = false;
+                recognition.lang = 'hi-IN'; // Prioritize Hindi/Indian English
+
+                recognition.onstart = () => {
+                    voiceBtn.classList.add('voice-active');
+                    sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-blue">Sathi:</span> Listening... Speak your query now (in Hindi or English).`;
+                };
+
+                recognition.onresult = (event) => {
+                    const speechResult = event.results[0][0].transcript;
+                    userQueryInput.value = speechResult;
+                    sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-green">Sathi:</span> Heard: "${speechResult}"... Ready to submit.`;
+                };
+
+                recognition.onend = () => {
+                    voiceBtn.classList.remove('voice-active');
+                };
+
+                recognition.onerror = (event) => {
+                    console.error("Speech Recognition Error:", event.error);
+                    voiceBtn.classList.remove('voice-active');
+                    sathiResponseDiv.innerHTML = `<span class="font-bold text-agri-red">Sathi Error:</span> Voice input failed. Error: ${event.error}. Please type your query.`;
+                };
+            } else {
+                voiceBtn.disabled = true;
+                voiceBtn.title = "Voice Input not supported by your browser.";
+                console.warn("Speech Recognition not supported.");
+            }
+        }
+
+        function startVoiceInput() {
+            if (recognition) {
+                try {
+                    recognition.start();
+                } catch(e) {
+                    console.error("Recognition already started or error:", e);
+                }
+            } else {
+                speakText("Voice input is not supported or failed to initialize in your browser.");
+            }
+        }
+        
+        // --- Initialization on Load ---
+        window.onload = function() {
+            initializeTTS();
+            initializeSpeechRecognition();
+            
+            // Set initial credit score and draw chart
+            const initialScore = 72; // Starting score simulation
+            scoreHistory.push({ id: 3, score: initialScore, label: `Initial Setup` });
+            updateScoreDisplay(initialScore);
+            drawD3Chart();
+            
+            // Set initial mode
+            toggleKisanLensMode('upload');
+            
+            // Initial instruction speak
+            setTimeout(() => {
+                 // Note: The TTS engine speaks the current content of sathi-response
+            }, 1000);
+        };
+
+        // Make functions globally accessible (for button clicks)
+        window.toggleKisanLensMode = toggleKisanLensMode;
+        window.handleFileUpload = handleFileUpload;
+        window.captureImage = captureImage;
+        window.clearImage = clearImage;
+        window.sendQuery = sendQuery;
+        window.startVoiceInput = startVoiceInput;
+        window.openLoanPortal = openLoanPortal;
+        window.openInsurancePortal = openInsurancePortal;
+        window.generateFinancialForesight = generateFinancialForesight;
+        window.simplifyPolicy = simplifyPolicy;
+        window.hideModal = hideModal;
+    </script>
+</body>
+</html>
